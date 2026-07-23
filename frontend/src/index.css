@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  
+  body {
+    @apply font-sans antialiased bg-gray-950 text-gray-100;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-gray-900; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-600 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-500; }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold
+           px-4 py-2.5 rounded-xl transition-all duration-150 
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-950
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium
+           px-4 py-2.5 rounded-xl transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-gray-600;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold
+           px-4 py-2.5 rounded-xl transition-all duration-150;
+  }
+
+  /* Form input */
+  .form-input {
+    @apply w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3
+           text-gray-100 placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           transition-all duration-150;
+  }
+
+  /* Form label */
+  .form-label {
+    @apply block text-sm font-medium text-gray-400 mb-1.5;
+  }
+
+  /* Channel badge */
+  .badge-dine-in {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
+           bg-blue-500/15 text-blue-400 text-xs font-semibold border border-blue-500/20;
+  }
+  .badge-whatsapp {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
+           bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20;
+  }
+
+  /* Status chips */
+  .status-placed    { @apply bg-yellow-500/15 text-yellow-400 border-yellow-500/20; }
+  .status-confirmed { @apply bg-blue-500/15 text-blue-400 border-blue-500/20; }
+  .status-preparing { @apply bg-orange-500/15 text-orange-400 border-orange-500/20; }
+  .status-ready     { @apply bg-green-500/15 text-green-400 border-green-500/20; }
+  .status-served    { @apply bg-gray-500/15 text-gray-400 border-gray-500/20; }
+  .status-cancelled { @apply bg-red-500/15 text-red-400 border-red-500/20; }
+
+  .status-chip {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border;
+  }
+
+  /* Sidebar link */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-gray-400
+           hover:text-white hover:bg-gray-800 transition-all duration-150;
+  }
+  .sidebar-link.active {
+    @apply text-white bg-brand-500/20 text-brand-400;
+  }
+
+  /* New order highlight animation */
+  @keyframes orderPop {
+    0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(252, 124, 15, 0.4); }
+    50%  { transform: scale(1.01); box-shadow: 0 0 0 8px rgba(252, 124, 15, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(252, 124, 15, 0); }
+  }
+  .order-pop {
+    animation: orderPop 0.6s ease-out;
+  }
+}
