@@ -55,9 +55,9 @@ app:
 
   whatsapp:
     api-url: https://graph.facebook.com/v20.0
-    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:1158092537394509}
-    token: ${WHATSAPP_TOKEN:EAASNcFHuQNkBSDUoNQG6Wv9uzoZAKFtWrySaei4lZAkggb0N5cekKHaZBSouCYKAS15eiAfVXeaYGj2HoJGcsKZCI3hcw9VuZAcWIIYVwXCGhz03oDuWLAkkC0bQme5glvx0I4BCezCU6ApyURMPAyi8mQtDCi4nzcoyG9OUZAEmZBsIaQ5YT5sP8aHOFm6x19uaOZAY8Nh4NHRJVHfaWhhgIi4S8IkVmfI9Mp1bhJ7unG9eLFsMZBf31vRm3iQMbsdisZBBHax2bi32oO4PICPDfQzAZDZD}
-    verify-token: ${WHATSAPP_VERIFY_TOKEN:whatsapp_webhook_verify_token12345}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    token: ${WHATSAPP_TOKEN:}
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:whatsapp_webhook_verify_token}
     session-timeout-minutes: 30
 
   cloudinary:
