@@ -54,9 +54,12 @@ public class WhatsappService {
         String normalizedCustomer = customerPhone.replaceAll("[^\\d]", "");
 
         Restaurant restaurant = restaurantRepository.findByWhatsappNumber(normalizedDisplay)
-                .orElse(null);
+                .orElseGet(() -> {
+                    log.info("No exact match for {}, falling back to default restaurant", normalizedDisplay);
+                    return restaurantRepository.findAll().stream().findFirst().orElse(null);
+                });
         if (restaurant == null) {
-            log.warn("No restaurant found for WhatsApp number: {}", displayPhoneNumber);
+            log.warn("No restaurant available in database");
             return;
         }
 
@@ -155,9 +158,9 @@ public class WhatsappService {
                                    String customerPhone, String messageBody) {
         String reply = messageBody.trim().toUpperCase();
 
-        if (reply.equals("YES") || reply.equals("Y")) {
+        if (reply.contains("YES") || reply.equals("Y") || reply.contains("HAAN") || reply.contains("HA")) {
             createWhatsappOrder(session, restaurant, customerPhone);
-        } else if (reply.equals("NO") || reply.equals("N")) {
+        } else if (reply.contains("NO") || reply.equals("N") || reply.contains("NA")) {
             session.setState(WhatsappSessionState.AWAITING_ITEMS);
             session.setPendingOrderJson(null);
             sendAndLog(restaurant, customerPhone,
@@ -177,10 +180,10 @@ public class WhatsappService {
      */
     private void parseSelectionAndConfirm(WhatsappSession session, Restaurant restaurant,
                                            String customerPhone, String messageBody) {
-        Map<Integer, Long> menuMap;
+        Map<String, Object> menuMap;
         try {
             menuMap = objectMapper.readValue(session.getPendingOrderJson(),
-                    new TypeReference<LinkedHashMap<Integer, Long>>() {});
+                    new TypeReference<LinkedHashMap<String, Object>>() {});
         } catch (Exception e) {
             log.error("Failed to parse menu map from session", e);
             sendAndLog(restaurant, customerPhone,
@@ -190,8 +193,8 @@ public class WhatsappService {
             return;
         }
 
-        // Parse the selection
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)(?:x(\\d+))?");
+        // Parse the selection (supports: 1, 1x2, 1 x 2, 1X2, 1*2)
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)(?:\\s*[xX*]\\s*(\\d+))?");
         java.util.regex.Matcher m = p.matcher(messageBody);
         List<Map<String, Object>> cart = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -200,7 +203,12 @@ public class WhatsappService {
             int num = Integer.parseInt(m.group(1));
             int qty = m.group(2) != null ? Integer.parseInt(m.group(2)) : 1;
 
-            Long menuItemId = menuMap.get(num);
+            Object val = menuMap != null ? menuMap.get(String.valueOf(num)) : null;
+            if (val == null) {
+                errors.add("Item #" + num + " not found");
+                continue;
+            }
+            Long menuItemId = Long.valueOf(val.toString());
             if (menuItemId == null) {
                 errors.add("Item #" + num + " not found");
                 continue;

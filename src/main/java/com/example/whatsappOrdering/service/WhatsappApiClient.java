@@ -21,6 +21,7 @@ import java.util.Map;
 public class WhatsappApiClient {
 
     private final AppProperties appProperties;
+    private final RestClient restClient = RestClient.create();
 
     @Retryable(maxAttempts = 2, backoff = @Backoff(delay = 1000, multiplier = 2))
     public void sendMessage(String to, String body) {
@@ -40,16 +41,24 @@ public class WhatsappApiClient {
                 "text", Map.of("body", body)
         );
 
+        log.info("Sending WhatsApp message | URL: {} | To: {}", url, to);
         try {
-            RestClient.create()
+            String responseBody = restClient
                     .post()
                     .uri(url)
                     .header("Authorization", "Bearer " + cfg.getToken())
                     .header("Content-Type", "application/json")
                     .body(payload)
                     .retrieve()
-                    .toBodilessEntity();
+                    .body(String.class);
+            log.info("WhatsApp API response for {}: {}", to, responseBody);
             log.info("WhatsApp message sent to {}", to);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.error("WhatsApp API HTTP error {} for {}: {}", e.getStatusCode(), to, e.getResponseBodyAsString());
+            throw e;
+        } catch (org.springframework.web.client.HttpServerErrorException e) {
+            log.error("WhatsApp API server error {} for {}: {}", e.getStatusCode(), to, e.getResponseBodyAsString());
+            throw e;
         } catch (Exception e) {
             log.error("Failed to send WhatsApp message to {}: {}", to, e.getMessage());
             throw e; // trigger retry

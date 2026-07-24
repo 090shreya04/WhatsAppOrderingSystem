@@ -54,7 +54,7 @@ app:
     origin: ${FRONTEND_ORIGIN:http://localhost:5174}
 
   whatsapp:
-    api-url: https://graph.facebook.com/v20.0
+    api-url: https://graph.facebook.com/v25.0
     phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
     token: ${WHATSAPP_TOKEN:}
     verify-token: ${WHATSAPP_VERIFY_TOKEN:whatsapp_webhook_verify_token}

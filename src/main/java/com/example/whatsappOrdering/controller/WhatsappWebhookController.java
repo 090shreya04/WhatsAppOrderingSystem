@@ -51,6 +51,7 @@ public class WhatsappWebhookController {
     @PostMapping
     @Operation(summary = "Receive inbound WhatsApp messages (POST)")
     public ResponseEntity<String> receiveMessage(@RequestBody String rawBody) {
+        log.debug("WhatsApp webhook raw payload: {}", rawBody);
         try {
             Map<String, Object> payload = objectMapper.readValue(rawBody, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
@@ -66,9 +67,29 @@ public class WhatsappWebhookController {
             Map<String, Object> value = (Map<String, Object>) changes.get(0).get("value");
             if (value == null) return ResponseEntity.ok("ok");
 
+            // ── Handle delivery STATUS updates (sent/delivered/read/failed) ──────
+            @SuppressWarnings("unchecked")
+            java.util.List<Map<String, Object>> statuses = (java.util.List<Map<String, Object>>) value.get("statuses");
+            if (statuses != null && !statuses.isEmpty()) {
+                for (Map<String, Object> status : statuses) {
+                    String msgId     = (String) status.getOrDefault("id", "");
+                    String statusVal = (String) status.getOrDefault("status", "");
+                    String recipient = (String) status.getOrDefault("recipient_id", "");
+                    Object errorObj  = status.get("errors");
+                    if ("failed".equals(statusVal) || errorObj != null) {
+                        log.error("⚠️ WhatsApp DELIVERY FAILED | msgId={} | to={} | errors={}", msgId, recipient, errorObj);
+                    } else {
+                        log.info("📬 WhatsApp delivery status: {} | msgId={} | to={}", statusVal, msgId, recipient);
+                    }
+                }
+                return ResponseEntity.ok("ok");
+            }
+
+            // ── Handle inbound MESSAGES ───────────────────────────────────────────
             @SuppressWarnings("unchecked")
             java.util.List<Map<String, Object>> messages = (java.util.List<Map<String, Object>>) value.get("messages");
             if (messages == null || messages.isEmpty()) {
+                log.debug("WhatsApp webhook received with no messages or statuses — ignoring. value keys: {}", value.keySet());
                 return ResponseEntity.ok("ok");
             }
 
@@ -82,15 +103,17 @@ public class WhatsappWebhookController {
             String messageId = (String) message.getOrDefault("id", "");
             String type = (String) message.getOrDefault("type", "");
 
-            if (!"text".equals(type)) {
-                log.debug("Ignoring non-text WhatsApp message of type: {}", type);
-                return ResponseEntity.ok("ok");
+            String body = "";
+            if ("text".equals(type)) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> textObj = (Map<String, Object>) message.get("text");
+                body = textObj != null ? ((String) textObj.getOrDefault("body", "")).trim() : "";
+            } else {
+                log.info("Received non-text message of type '{}' from {}, treating as 'Menu'", type, from);
+                body = "Menu";
             }
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> textObj = (Map<String, Object>) message.get("text");
-            String body = textObj != null ? ((String) textObj.getOrDefault("body", "")).trim() : "";
-            if (body.isBlank()) return ResponseEntity.ok("ok");
+            if (body.isBlank()) body = "Menu";
 
             log.info("Inbound WhatsApp from={} to={}: {}", from, displayPhoneNumber, body);
             whatsappService.handleInbound(displayPhoneNumber, from, body, messageId);
