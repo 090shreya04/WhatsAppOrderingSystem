@@ -47,7 +47,7 @@ public class WhatsappOrderingApplication {
                                 .name("Tasty Restaurant")
                                 .whatsappNumber("15551640709")
                                 .address("Main Market Road")
-                                .isActive(true)
+                                .active(true)
                                 .owner(owner)
                                 .build());
 
@@ -63,7 +63,7 @@ public class WhatsappOrderingApplication {
                 menuItemRepository.save(com.example.whatsappOrdering.entity.MenuItem.builder()
                         .name("Egg Roll")
                         .price(new java.math.BigDecimal("70"))
-                        .isAvailable(true)
+                        .available(true)
                         .category(starters)
                         .restaurant(restaurant)
                         .build());
@@ -71,7 +71,7 @@ public class WhatsappOrderingApplication {
                 menuItemRepository.save(com.example.whatsappOrdering.entity.MenuItem.builder()
                         .name("Chicken Roll")
                         .price(new java.math.BigDecimal("120"))
-                        .isAvailable(true)
+                        .available(true)
                         .category(starters)
                         .restaurant(restaurant)
                         .build());
@@ -79,7 +79,7 @@ public class WhatsappOrderingApplication {
                 menuItemRepository.save(com.example.whatsappOrdering.entity.MenuItem.builder()
                         .name("Cold Drink")
                         .price(new java.math.BigDecimal("40"))
-                        .isAvailable(true)
+                        .available(true)
                         .category(starters)
                         .restaurant(restaurant)
                         .build());
