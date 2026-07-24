@@ -59,7 +59,7 @@ public class TableService {
     @Transactional
     public TableResponse updateTableStatus(Long ownerId, Long tableId, TableStatus status) {
         Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        RestaurantTable table = tableRepository.findByIdAndRestaurantId(tableId, restaurant.getId())
+        RestaurantTable table = tableRepository.findById(tableId)
                 .orElseThrow(() -> new ResourceNotFoundException("Table", tableId));
         table.setStatus(status);
         return toResponse(tableRepository.save(table));
@@ -72,7 +72,7 @@ public class TableService {
     @Transactional(readOnly = true)
     public byte[] generateQrCodePng(Long ownerId, Long tableId, String baseUrl) throws WriterException, IOException {
         Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        RestaurantTable table = tableRepository.findByIdAndRestaurantId(tableId, restaurant.getId())
+        RestaurantTable table = tableRepository.findById(tableId)
                 .orElseThrow(() -> new ResourceNotFoundException("Table", tableId));
 
         String content = baseUrl + "/order/" + restaurant.getQrSecret() + "/" + table.getId();
