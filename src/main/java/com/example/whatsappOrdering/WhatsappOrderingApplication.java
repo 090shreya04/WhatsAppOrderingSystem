@@ -39,6 +39,7 @@ public class WhatsappOrderingApplication {
                                 .passwordHash(passwordEncoder.encode("admin123"))
                                 .name("Tasty Owner")
                                 .role(com.example.whatsappOrdering.entity.enums.UserRole.OWNER)
+                                .createdAt(java.time.LocalDateTime.now())
                                 .build()));
 
                 // 2. Create Restaurant
@@ -47,8 +48,10 @@ public class WhatsappOrderingApplication {
                                 .name("Tasty Restaurant")
                                 .whatsappNumber("15551640709")
                                 .address("Main Market Road")
+                                .qrSecret(java.util.UUID.randomUUID().toString().replace("-", ""))
                                 .active(true)
                                 .owner(owner)
+                                .createdAt(java.time.LocalDateTime.now())
                                 .build());
 
                 // 3. Create Category
