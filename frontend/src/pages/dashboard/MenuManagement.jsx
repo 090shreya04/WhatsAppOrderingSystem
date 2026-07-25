@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { menuApi } from '../../api'
 import toast from 'react-hot-toast'
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, ImageIcon, X, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, ImageIcon, X } from 'lucide-react'
 
 function ItemRow({ item, onToggle, onEdit, onDelete }) {
   const [toggling, setToggling] = useState(false)
@@ -16,7 +16,7 @@ function ItemRow({ item, onToggle, onEdit, onDelete }) {
   }
 
   return (
-    <div className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800/50 rounded-xl group transition-colors">
+    <div className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800/50 rounded-xl transition-colors border-b border-gray-800/60 last:border-0">
       {/* Image thumbnail */}
       <div className="w-10 h-10 rounded-lg bg-gray-800 flex-shrink-0 overflow-hidden">
         {item.imageUrl
@@ -35,7 +35,7 @@ function ItemRow({ item, onToggle, onEdit, onDelete }) {
 
       <span className="font-semibold text-brand-400 text-sm">₹{Number(item.price).toFixed(0)}</span>
 
-      {/* Availability toggle — most important action per UX brief */}
+      {/* Availability toggle */}
       <button id={`toggle-item-${item.id}`} onClick={handleToggle} disabled={toggling}
         title={item.available ? 'Mark unavailable' : 'Mark available'}
         className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg transition-colors
@@ -46,15 +46,15 @@ function ItemRow({ item, onToggle, onEdit, onDelete }) {
         {item.available ? 'Available' : 'Out of stock'}
       </button>
 
-      {/* Edit / delete (secondary) */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-        <button id={`edit-item-${item.id}`} onClick={() => onEdit(item)}
-          className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500 hover:text-gray-200">
-          <Pencil size={14} />
+      {/* Edit / Delete item buttons (Always visible for easy clicking) */}
+      <div className="flex gap-1 items-center ml-1">
+        <button id={`edit-item-${item.id}`} onClick={() => onEdit(item)} title="Edit Item"
+          className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 transition-colors">
+          <Pencil size={13} />
         </button>
-        <button id={`delete-item-${item.id}`} onClick={() => onDelete(item.id)}
-          className="p-1.5 rounded-lg hover:bg-red-900/40 text-gray-500 hover:text-red-400">
-          <Trash2 size={14} />
+        <button id={`delete-item-${item.id}`} onClick={() => onDelete(item.id, item.name)} title="Delete Item"
+          className="p-1.5 rounded-lg bg-gray-800 hover:bg-red-500/20 text-gray-300 hover:text-red-400 border border-gray-700 transition-colors">
+          <Trash2 size={13} />
         </button>
       </div>
     </div>
@@ -92,22 +92,22 @@ function ItemModal({ item, categories, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="glass-card w-full max-w-md p-6 shadow-2xl">
+      <div className="glass-card w-full max-w-md p-6 shadow-2xl border border-gray-700">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-white">{item ? 'Edit item' : 'Add menu item'}</h2>
+          <h2 className="text-lg font-bold text-white">{item ? 'Edit Item' : 'Add Menu Item'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-300"><X size={20} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="form-label">Item name</label>
-            <input className="form-input" placeholder="Paneer Tikka" required
+            <label className="form-label">Item Name</label>
+            <input className="form-input" placeholder="Chicken Roll" required
               value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="form-label">Price (₹)</label>
-              <input className="form-input" type="number" min="0" step="0.5" placeholder="180" required
+              <input className="form-input" type="number" min="0" step="0.5" placeholder="120" required
                 value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
             </div>
             <div>
@@ -140,7 +140,7 @@ function ItemModal({ item, categories, onSave, onClose }) {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary flex-1">
-              {saving ? 'Saving…' : 'Save item'}
+              {saving ? 'Saving…' : 'Save Item'}
             </button>
           </div>
         </form>
@@ -157,8 +157,12 @@ export default function MenuManagement() {
   const [editItem, setEditItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [noRestaurant, setNoRestaurant] = useState(false)
+
+  // Category state
   const [newCatName, setNewCatName] = useState('')
   const [addingCat, setAddingCat] = useState(false)
+  const [editingCatId, setEditingCatId] = useState(null)
+  const [editCatName, setEditCatName] = useState('')
 
   const load = async () => {
     try {
@@ -179,7 +183,7 @@ export default function MenuManagement() {
     ? items.filter(i => (i.categoryId === activeTab) || (activeTab === 'none' && !i.categoryId))
     : items
 
-  const handleSave = async (data) => {
+  const handleSaveItem = async (data) => {
     try {
       if (editItem) {
         await menuApi.updateMenuItem(editItem.id, data)
@@ -198,15 +202,18 @@ export default function MenuManagement() {
     toast.success(available ? 'Item marked available' : 'Item marked out of stock')
   }
 
-  const handleDeleteCategory = async (id) => {
-    if (!confirm('Delete this category? Items will become uncategorised.')) return
+  const handleDeleteItem = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return
     try {
-      await menuApi.deleteCategory(id)
-      if (activeTab === id) setActiveTab(null)
-      load()
-      toast.success('Category deleted')
-    } catch { toast.error('Failed to delete category') }
+      await menuApi.deleteMenuItem(id)
+      setItems(prev => prev.filter(i => i.id !== id))
+      toast.success(`Deleted "${name}"`)
+    } catch {
+      toast.error('Failed to delete item')
+    }
   }
+
+  // ─── Category Actions ───────────────────────────────────────────────
 
   const handleAddCategory = async (e) => {
     e.preventDefault()
@@ -220,11 +227,32 @@ export default function MenuManagement() {
     } catch { toast.error('Failed to add category') }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this item?')) return
-    await menuApi.deleteMenuItem(id)
-    setItems(prev => prev.filter(i => i.id !== id))
-    toast.success('Item deleted')
+  const handleStartEditCategory = (c) => {
+    setEditingCatId(c.id)
+    setEditCatName(c.name)
+  }
+
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault()
+    if (!editCatName.trim() || !editingCatId) return
+    try {
+      await menuApi.updateCategory(editingCatId, { name: editCatName.trim() })
+      setEditingCatId(null)
+      load()
+      toast.success('Category updated!')
+    } catch {
+      toast.error('Failed to update category')
+    }
+  }
+
+  const handleDeleteCategory = async (id, name) => {
+    if (!window.confirm(`Delete category "${name}"? Items in this category will become uncategorised.`)) return
+    try {
+      await menuApi.deleteCategory(id)
+      if (activeTab === id) setActiveTab(null)
+      load()
+      toast.success(`Category "${name}" deleted`)
+    } catch { toast.error('Failed to delete category') }
   }
 
   if (loading) return <div className="p-6 text-gray-500">Loading menu…</div>
@@ -249,24 +277,70 @@ export default function MenuManagement() {
         </button>
       </div>
 
-      {/* Category tabs + add category */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 items-center">
+      {/* Category Pills with Edit & Delete */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 items-center flex-wrap">
         <button onClick={() => setActiveTab(null)}
           className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors
             ${activeTab === null ? 'bg-brand-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
           All ({items.length})
         </button>
-        {categories.map(c => (
-          <button key={c.id} onClick={() => setActiveTab(c.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors
-              ${activeTab === c.id ? 'bg-brand-500 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
-            {c.name} ({items.filter(i => i.categoryId === c.id).length})
-          </button>
-        ))}
 
-        {/* Inline add category */}
+        {categories.map(c => {
+          const isEditing = editingCatId === c.id
+          if (isEditing) {
+            return (
+              <form key={c.id} onSubmit={handleUpdateCategory} className="flex gap-1 items-center">
+                <input
+                  autoFocus
+                  value={editCatName}
+                  onChange={e => setEditCatName(e.target.value)}
+                  className="bg-gray-800 border border-brand-500 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none w-32"
+                />
+                <button type="submit" className="bg-brand-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-brand-600">Save</button>
+                <button type="button" onClick={() => setEditingCatId(null)} className="bg-gray-800 text-gray-400 px-2 py-1.5 rounded-lg text-xs hover:bg-gray-700">✕</button>
+              </form>
+            )
+          }
+
+          const isActive = activeTab === c.id
+          const itemCount = items.filter(i => i.categoryId === c.id).length
+
+          return (
+            <div key={c.id} className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors border ${
+              isActive
+                ? 'bg-brand-500 text-white border-brand-400'
+                : 'bg-gray-800/90 text-gray-300 border-gray-700/80 hover:bg-gray-700'
+            }`}>
+              <button onClick={() => setActiveTab(c.id)} className="flex items-center gap-1.5 whitespace-nowrap">
+                <span>{c.name}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-gray-700 text-gray-400'}`}>
+                  {itemCount}
+                </span>
+              </button>
+
+              <div className="flex items-center gap-1 ml-1.5 border-l border-gray-700/60 pl-1.5">
+                <button
+                  onClick={() => handleStartEditCategory(c)}
+                  title="Edit Category Name"
+                  className="p-1 hover:text-white rounded transition-colors text-gray-400"
+                >
+                  <Pencil size={12} />
+                </button>
+                <button
+                  onClick={() => handleDeleteCategory(c.id, c.name)}
+                  title="Delete Category"
+                  className="p-1 hover:text-red-400 rounded transition-colors text-gray-400"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Add Category Button / Form */}
         {addingCat ? (
-          <form onSubmit={handleAddCategory} className="flex gap-1">
+          <form onSubmit={handleAddCategory} className="flex gap-1 items-center">
             <input
               autoFocus
               value={newCatName}
@@ -281,7 +355,7 @@ export default function MenuManagement() {
           <button
             id="add-category-btn"
             onClick={() => setAddingCat(true)}
-            className="px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap text-gray-500 border border-dashed border-gray-700 hover:border-brand-500 hover:text-brand-400 transition-colors"
+            className="px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap text-gray-400 border border-dashed border-gray-700 hover:border-brand-500 hover:text-brand-400 transition-colors"
           >
             + Category
           </button>
@@ -294,14 +368,15 @@ export default function MenuManagement() {
           ? <p className="p-8 text-center text-gray-500">No items in this category</p>
           : filteredItems.map(item => (
             <ItemRow key={item.id} item={item}
-              onToggle={handleToggle} onEdit={i => { setEditItem(i); setShowModal(true) }}
-              onDelete={handleDelete} />
+              onToggle={handleToggle}
+              onEdit={i => { setEditItem(i); setShowModal(true) }}
+              onDelete={handleDeleteItem} />
           ))
         }
       </div>
 
       {showModal && (
-        <ItemModal item={editItem} categories={categories} onSave={handleSave}
+        <ItemModal item={editItem} categories={categories} onSave={handleSaveItem}
           onClose={() => { setShowModal(false); setEditItem(null) }} />
       )}
     </div>
