@@ -356,6 +356,7 @@ public class WhatsappService {
                 .whatsappMessageId(whatsappMessageId)
                 .status(direction == MessageDirection.OUT ? "sent" : null)
                 .order(order)
+                .createdAt(LocalDateTime.now())
                 .build();
         messageRepository.save(msg);
     }
