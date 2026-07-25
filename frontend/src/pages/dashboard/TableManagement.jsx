@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { tableApi } from '../../api'
 import toast from 'react-hot-toast'
-import { Plus, QrCode, Download, Circle } from 'lucide-react'
+import { Plus, QrCode, Download, Circle, Edit2, Trash2 } from 'lucide-react'
 
-function TableCard({ table, onStatusToggle }) {
+function TableCard({ table, onStatusToggle, onEdit, onDelete }) {
   const isOccupied = table.status === 'OCCUPIED'
 
   const handleDownloadQr = () => {
@@ -29,18 +29,37 @@ function TableCard({ table, onStatusToggle }) {
   }
 
   return (
-    <div className={`glass-card p-5 flex flex-col items-center gap-3 transition-all
+    <div className={`glass-card p-4 flex flex-col items-center gap-3 transition-all relative group
       ${isOccupied ? 'border-orange-500/30' : 'border-gray-800'}`}>
+      
+      {/* Top right quick edit / delete actions */}
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(table)}
+          title="Edit Table Number"
+          className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+        >
+          <Edit2 size={13} />
+        </button>
+        <button
+          onClick={() => onDelete(table.id, table.tableNumber)}
+          title="Delete Table"
+          className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+
       {/* Table icon */}
-      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold
-        ${isOccupied ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-800 text-gray-400'}`}>
+      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold mt-2
+        ${isOccupied ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-800 text-gray-300'}`}>
         {table.tableNumber}
       </div>
 
-      {/* Status */}
+      {/* Status Toggle */}
       <button id={`toggle-table-${table.id}`}
         onClick={() => onStatusToggle(table.id, isOccupied ? 'FREE' : 'OCCUPIED')}
-        className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors
+        className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full transition-colors
           ${isOccupied
             ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25'
             : 'bg-green-500/15 text-green-400 border border-green-500/20 hover:bg-green-500/25'}`}>
@@ -50,7 +69,7 @@ function TableCard({ table, onStatusToggle }) {
 
       {/* QR download */}
       <button id={`download-qr-${table.id}`} onClick={handleDownloadQr}
-        className="btn-ghost flex items-center gap-1.5 text-xs w-full justify-center py-2">
+        className="btn-ghost flex items-center gap-1.5 text-xs w-full justify-center py-1.5">
         <Download size={13} /> Download QR
       </button>
     </div>
@@ -62,6 +81,8 @@ export default function TableManagement() {
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [newNumber, setNewNumber] = useState('')
+  const [editingTable, setEditingTable] = useState(null)
+  const [editNumber, setEditNumber] = useState('')
   const [noRestaurant, setNoRestaurant] = useState(false)
 
   const load = async () => {
@@ -87,6 +108,35 @@ export default function TableManagement() {
       load()
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to add table')
+    }
+  }
+
+  const handleStartEdit = (table) => {
+    setEditingTable(table)
+    setEditNumber(table.tableNumber)
+  }
+
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    if (!editingTable) return
+    try {
+      await tableApi.updateTable(editingTable.id, { tableNumber: editNumber.trim() })
+      toast.success(`Table renamed to ${editNumber}`)
+      setEditingTable(null)
+      load()
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to update table')
+    }
+  }
+
+  const handleDelete = async (id, tableNumber) => {
+    if (!window.confirm(`Are you sure you want to delete Table ${tableNumber}?`)) return
+    try {
+      await tableApi.deleteTable(id)
+      toast.success(`Table ${tableNumber} deleted`)
+      setTables(prev => prev.filter(t => t.id !== id))
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to delete table')
     }
   }
 
@@ -132,6 +182,19 @@ export default function TableManagement() {
         </div>
       )}
 
+      {/* Edit table modal / form */}
+      {editingTable && (
+        <div className="glass-card p-4 mb-6 flex flex-col gap-2 border border-brand-500/40">
+          <p className="text-xs text-brand-400 font-semibold uppercase tracking-wider">Editing Table {editingTable.tableNumber}</p>
+          <form onSubmit={handleUpdate} className="flex gap-3">
+            <input className="form-input flex-1" placeholder="New Table Number"
+              value={editNumber} onChange={e => setEditNumber(e.target.value)} required autoFocus />
+            <button type="submit" className="btn-primary px-4">Save</button>
+            <button type="button" onClick={() => setEditingTable(null)} className="btn-ghost">Cancel</button>
+          </form>
+        </div>
+      )}
+
       {/* Table grid */}
       {tables.length === 0 ? (
         <div className="glass-card p-12 text-center">
@@ -141,7 +204,13 @@ export default function TableManagement() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {tables.map(table => (
-            <TableCard key={table.id} table={table} onStatusToggle={handleStatusToggle} />
+            <TableCard
+              key={table.id}
+              table={table}
+              onStatusToggle={handleStatusToggle}
+              onEdit={handleStartEdit}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}

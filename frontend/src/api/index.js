@@ -42,10 +42,12 @@ const getBackendBaseUrl = () => {
 }
 
 export const tableApi = {
-  getTables:    ()         => api.get('/restaurants/me/tables'),
-  createTable:  (data)     => api.post('/restaurants/me/tables', data),
+  getTables:    ()           => api.get('/restaurants/me/tables'),
+  createTable:  (data)       => api.post('/restaurants/me/tables', data),
+  updateTable:  (id, data)   => api.put(`/tables/${id}`, data),
+  deleteTable:  (id)         => api.delete(`/tables/${id}`),
   updateStatus: (id, status) => api.patch(`/tables/${id}/status`, { status }),
-  getQrUrl:     (id)       => `${getBackendBaseUrl()}/tables/${id}/qr`,
+  getQrUrl:     (id)         => `${getBackendBaseUrl()}/tables/${id}/qr`,
 }
 
 export const orderApi = {

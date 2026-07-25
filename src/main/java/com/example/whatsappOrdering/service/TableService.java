@@ -66,6 +66,27 @@ public class TableService {
         return toResponse(tableRepository.save(table));
     }
 
+    @Transactional
+    public TableResponse updateTable(Long ownerId, Long tableId, CreateTableRequest request) {
+        Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
+        RestaurantTable table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new ResourceNotFoundException("Table", tableId));
+        String num = request.tableNumber() != null ? request.tableNumber().trim() : "";
+        if (!table.getTableNumber().equalsIgnoreCase(num) &&
+                tableRepository.existsByRestaurantIdAndTableNumber(restaurant.getId(), num)) {
+            throw new BusinessException("Table number already exists: " + num);
+        }
+        table.setTableNumber(num);
+        return toResponse(tableRepository.save(table));
+    }
+
+    @Transactional
+    public void deleteTable(Long ownerId, Long tableId) {
+        RestaurantTable table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new ResourceNotFoundException("Table", tableId));
+        tableRepository.delete(table);
+    }
+
     /**
      * Generates a QR code PNG for the table's ordering URL.
      * Returns raw bytes — controller streams them as image/png.

@@ -54,6 +54,21 @@ public class TableController {
         return ResponseEntity.ok(tableService.updateTableStatus((Long) auth.getPrincipal(), id, status));
     }
 
+    @PutMapping("/tables/{id}")
+    @Operation(summary = "Edit table number")
+    public ResponseEntity<TableResponse> updateTable(@PathVariable Long id,
+                                                      @Valid @RequestBody CreateTableRequest request,
+                                                      Authentication auth) {
+        return ResponseEntity.ok(tableService.updateTable((Long) auth.getPrincipal(), id, request));
+    }
+
+    @DeleteMapping("/tables/{id}")
+    @Operation(summary = "Delete a table")
+    public ResponseEntity<Void> deleteTable(@PathVariable Long id, Authentication auth) {
+        tableService.deleteTable((Long) auth.getPrincipal(), id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/tables/{id}/qr")
     @Operation(summary = "Download QR code PNG for a table")
     public ResponseEntity<byte[]> downloadQr(@PathVariable Long id,
