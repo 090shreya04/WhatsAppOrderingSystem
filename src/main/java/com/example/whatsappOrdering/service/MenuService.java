@@ -19,6 +19,7 @@ public class MenuService {
 
     private final CategoryRepository categoryRepository;
     private final MenuItemRepository menuItemRepository;
+    private final com.example.whatsappOrdering.repository.OrderItemRepository orderItemRepository;
     private final RestaurantService restaurantService;
 
     // ─── Categories ──────────────────────────────────────────────────
@@ -119,6 +120,11 @@ public class MenuService {
     public void deleteMenuItem(Long ownerId, Long itemId) {
         MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", itemId));
+        List<com.example.whatsappOrdering.entity.OrderItem> orderItems = orderItemRepository.findByMenuItemId(itemId);
+        for (com.example.whatsappOrdering.entity.OrderItem oi : orderItems) {
+            oi.setMenuItem(null);
+            orderItemRepository.save(oi);
+        }
         menuItemRepository.delete(item);
     }
 

@@ -12,6 +12,8 @@ import java.util.List;
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
+    List<OrderItem> findByMenuItemId(Long menuItemId);
+
     /** Top-selling items by quantity in a date range (analytics) */
     @Query("SELECT oi.menuItem.name, SUM(oi.quantity) AS total FROM OrderItem oi " +
            "WHERE oi.order.restaurant.id = :restaurantId " +
