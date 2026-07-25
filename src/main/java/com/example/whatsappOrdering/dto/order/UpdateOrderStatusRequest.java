@@ -4,5 +4,6 @@ import com.example.whatsappOrdering.entity.enums.OrderStatus;
 import jakarta.validation.constraints.NotNull;
 
 public record UpdateOrderStatusRequest(
-        @NotNull OrderStatus status
+        @NotNull OrderStatus status,
+        String reason
 ) {}

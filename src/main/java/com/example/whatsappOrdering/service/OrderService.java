@@ -106,7 +106,7 @@ public class OrderService {
     // ─── Update Status (owner/staff) ─────────────────────────────────
 
     @Transactional
-    public OrderResponse updateOrderStatus(Long ownerId, Long orderId, OrderStatus newStatus) {
+    public OrderResponse updateOrderStatus(Long ownerId, Long orderId, OrderStatus newStatus, String reason) {
         Restaurant restaurant = getRestaurantForOwner(ownerId);
         Order order = orderRepository.findByIdAndRestaurantId(orderId, restaurant.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
@@ -118,9 +118,9 @@ public class OrderService {
         // Push dashboard update
         webSocketPublisher.publishStatusChanged(order);
 
-        // Notify WhatsApp customer on CONFIRMED and READY
+        // Notify WhatsApp customer
         if (order.getChannel() == OrderChannel.WHATSAPP && order.getCustomerPhone() != null) {
-            sendWhatsAppStatusNotification(order, newStatus);
+            sendWhatsAppStatusNotification(order, newStatus, reason);
         }
 
         log.info("Order {} status changed: {} → {}", orderId, oldStatus, newStatus);
@@ -153,16 +153,24 @@ public class OrderService {
                 .orElseThrow(() -> new BusinessException("No restaurant found for this owner"));
     }
 
-    private void sendWhatsAppStatusNotification(Order order, OrderStatus status) {
+    private void sendWhatsAppStatusNotification(Order order, OrderStatus status, String reason) {
         try {
-            String message = switch (status) {
-                case CONFIRMED -> "✅ Your order has been confirmed! We're getting started on it.";
-                case PREPARING -> "🍳 Your order is being prepared!";
-                case READY -> "🎉 Your order is ready for pickup!";
-                case SERVED -> "🙏 Thank you for ordering from " + (order.getRestaurant() != null ? order.getRestaurant().getName() : "us") + "! Hope you enjoyed your meal. Visit us again soon! ❤️";
-                case CANCELLED -> "❌ Sorry, your order has been cancelled. Please contact us for help.";
-                default -> null;
-            };
+            String message;
+            if (status == OrderStatus.CANCELLED) {
+                if (reason != null && !reason.isBlank()) {
+                    message = "❌ Your order #" + order.getId() + " has been cancelled. Reason: " + reason.trim();
+                } else {
+                    message = "❌ Sorry, your order #" + order.getId() + " has been cancelled. Please contact us for help.";
+                }
+            } else {
+                message = switch (status) {
+                    case CONFIRMED -> "✅ Your order has been confirmed! We're getting started on it.";
+                    case PREPARING -> "🍳 Your order is being prepared!";
+                    case READY -> "🎉 Your order is ready for pickup!";
+                    case SERVED -> "🙏 Thank you for ordering from " + (order.getRestaurant() != null ? order.getRestaurant().getName() : "us") + "! Hope you enjoyed your meal. Visit us again soon! ❤️";
+                    default -> null;
+                };
+            }
             if (message != null) {
                 whatsappApiClient.sendMessage(order.getCustomerPhone(), message);
             }

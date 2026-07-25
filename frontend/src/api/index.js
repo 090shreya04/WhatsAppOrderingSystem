@@ -52,7 +52,7 @@ export const tableApi = {
 
 export const orderApi = {
   getOrders:     (params) => api.get('/restaurants/me/orders', { params }),
-  updateStatus:  (id, status) => api.patch(`/orders/${id}/status`, { status }),
+  updateStatus:  (id, status, reason) => api.patch(`/orders/${id}/status`, { status, reason }),
   placeOrder:    (data)   => api.post('/public/orders', data),
   getStatus:     (id)     => api.get(`/public/orders/${id}/status`),
 }

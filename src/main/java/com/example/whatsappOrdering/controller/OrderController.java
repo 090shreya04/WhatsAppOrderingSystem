@@ -56,6 +56,6 @@ public class OrderController {
                                                        @Valid @RequestBody UpdateOrderStatusRequest request,
                                                        Authentication auth) {
         return ResponseEntity.ok(
-                orderService.updateOrderStatus((Long) auth.getPrincipal(), id, request.status()));
+                orderService.updateOrderStatus((Long) auth.getPrincipal(), id, request.status(), request.reason()));
     }
 }
