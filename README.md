@@ -1,493 +1,215 @@
-﻿# 🍽️ Restaurant Ordering System
-### Dine-In QR Ordering + WhatsApp Pre-Order System
+# 🍽️ WhatsApp & Dine-In QR Restaurant Ordering System
 
-> A full-stack restaurant management platform that allows customers to scan a QR code at their table and place orders directly from their phone — or pre-order via WhatsApp. The restaurant owner gets a real-time dashboard to manage orders, menu, tables, and analytics.
+[![Live Frontend](https://img.shields.io/badge/Vercel-Live_Frontend-000000?style=for-the-badge&logo=vercel)](https://whats-app-ordering-system-eta.vercel.app)
+[![Live Backend](https://img.shields.io/badge/Render-Live_Backend-46E3B7?style=for-the-badge&logo=render)](https://whatsapporderingsystem.onrender.com)
+[![Database](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
+[![WhatsApp API](https://img.shields.io/badge/Meta-WhatsApp_Cloud_API-25D366?style=for-the-badge&logo=whatsapp)](https://developers.facebook.com)
+
+> **A Complete Production-Grade SaaS Platform** for restaurants featuring **Dine-In Table QR Code Ordering** and **Conversational WhatsApp Pre-Ordering**. Restaurant owners get a real-time sound-enabled dashboard to manage live orders, interactive menus, dining tables, and analytics.
+
+---
+
+## 🌐 Live Production Links & Test Credentials
+
+- 🖥️ **Live Web Dashboard:** [https://whats-app-ordering-system-eta.vercel.app](https://whats-app-ordering-system-eta.vercel.app)
+- ⚙️ **Live API Server:** `https://whatsapporderingsystem.onrender.com`
+- 🤖 **Active WhatsApp Bot Number:** `+1 (555) 164-0709` (`15551640709`)
+- 🔑 **Test Admin Credentials:**
+  - **Email:** `admin@tasty.com`
+  - **Password:** `admin123`
 
 ---
 
 ## 📋 Table of Contents
 
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
+- [Features Breakdown](#-features-breakdown)
 - [System Architecture](#-system-architecture)
-- [Prerequisites](#-prerequisites)
-- [Local Setup (Step-by-Step)](#-local-setup-step-by-step)
-  - [1. Clone the Repository](#1-clone-the-repository)
-  - [2. Setup PostgreSQL Database](#2-setup-postgresql-database)
-  - [3. Configure Environment Variables](#3-configure-environment-variables)
-  - [4. Run the Backend](#4-run-the-backend)
-  - [5. Run the Frontend](#5-run-the-frontend)
-  - [6. Setup WhatsApp Webhook (ngrok)](#6-setup-whatsapp-webhook-ngrok)
-- [External Services Setup](#-external-services-setup)
-- [Project Structure](#-project-structure)
+- [Tech Stack](#-tech-stack)
+- [WhatsApp Bot Flow](#-whatsapp-bot-flow)
 - [API Reference](#-api-reference)
-- [WhatsApp Bot Flow](#-whatsapp-bot--how-it-works)
-- [Troubleshooting](#-troubleshooting)
+- [Security Architecture](#-security-architecture)
+- [Local Setup & Deployment](#-local-setup--deployment)
 
 ---
 
-## ✨ Features
+## ✨ Features Breakdown
 
 ### 👨‍🍳 Restaurant Owner Dashboard
+| Feature | Capabilities & Description |
+|---|---|
+| 🔐 **Authentication & Security** | JWT-based auth (`JwtAuthFilter`), BCrypt password hashing (strength 12), role-based protection |
+| 🔔 **Live Order Queue & Alerts** | Real-time STOMP WebSocket push — new orders pop up instantly with sound alerts 🔔 |
+| 🛑 **Cancel Order & Custom Reasons** | Cancel any order with custom reason (e.g., *"Item out of stock"*) or quick presets; WhatsApp sends the reason to customer! |
+| 🍔 **Full Menu Management** | Full CRUD for Categories & Items! Inline Category rename/delete, Menu item CRUD, Cloudinary image upload, and **Available / Out of stock** toggle |
+| 🪑 **Full Table Management** | Full CRUD for Tables! Add, edit/rename, and delete tables with instant PNG QR Code generation & browser download |
+| 📊 **Analytics & Reports** | Revenue breakdown, order channel comparison (Dine-In QR vs WhatsApp), top-selling items, and peak hour traffic |
+| ⚙️ **Settings & Multi-Tenant** | Dynamic restaurant profile, phone number binding, and multi-tenant isolation by `restaurant_id` |
+
+### 📱 Customer (Dine-In QR Code Ordering)
 | Feature | Description |
 |---|---|
-| 🔐 **Authentication** | Secure JWT-based login & signup for restaurant owners |
-| 📊 **Live Dashboard** | Real-time order stream via WebSocket (STOMP) — new orders appear instantly without refresh |
-| 🍔 **Menu Management** | Add/edit/delete menu items with images (Cloudinary), categories, prices, availability toggle |
-| 🪑 **Table Management** | Create tables and generate unique QR codes — download and print for each table |
-| 📈 **Analytics** | Charts for revenue, order volume, top-selling items, channel breakdown (QR vs WhatsApp) |
-| ⚙️ **Settings** | Configure restaurant name, WhatsApp number, and session timeout |
+| 📷 **Table QR Scan** | Customer scans QR on table → lands on mobile SPA ordering page (`/order/<qrSecret>/<tableId>`) |
+| 🛒 **Interactive Mobile Menu** | Filter items by category, add to cart, adjust quantities, view total price |
+| ⚡ **Instant Kitchen Dispatch** | Placing order dispatches to kitchen dashboard in <100ms via WebSocket |
 
-### 📱 Customer (QR Dine-In Ordering)
+### 💬 Conversational WhatsApp Pre-Order Bot
 | Feature | Description |
 |---|---|
-| 📷 **QR Code Scan** | Customer scans QR at table → lands on a mobile-friendly menu page |
-| 🛒 **Browse & Order** | Browse menu by category, add items to cart, adjust quantities |
-| ✅ **Order Confirmation** | Order placed → customer gets live status page |
-| 🔄 **Real-time Status** | Order status updates (PLACED → PREPARING → READY → SERVED) in real time |
-
-### 💬 WhatsApp Pre-Order Bot
-| Feature | Description |
-|---|---|
-| 🤖 **Conversational Bot** | Customers WhatsApp the restaurant → bot sends a numbered menu |
-| 🔢 **Smart Ordering** | Reply with item numbers & quantities (e.g. `1, 3x2, 2`) |
-| ✔️ **Confirmation** | Bot shows itemized summary + total, customer replies YES/NO |
-| 🔔 **Dashboard Alert** | Confirmed WhatsApp orders appear instantly on owner dashboard via WebSocket |
-| ⏱️ **Session Management** | Sessions auto-expire; stale sessions cleaned up every 15 minutes |
-| 🔁 **Retry Logic** | WhatsApp API calls use Spring Retry for automatic retry on failure |
-| 🚦 **Rate Limiting** | Bucket4j-based rate limiting to prevent webhook abuse |
-
----
-
-## 🛠️ Tech Stack
-
-### Backend
-| Technology | Version | Purpose |
-|---|---|---|
-| **Java** | 21 | Core language |
-| **Spring Boot** | 4.1.0 | Web framework |
-| **Spring Security** | — | JWT authentication & route protection |
-| **Spring Data JPA** | — | ORM & database access |
-| **Spring WebSocket (STOMP)** | — | Real-time order push to dashboard |
-| **Spring Retry** | 2.0.11 | Auto-retry WhatsApp API calls |
-| **PostgreSQL** | 16 | Primary relational database |
-| **Flyway** | — | Automatic database schema migrations |
-| **jjwt** | 0.12.6 | JWT token creation & validation |
-| **ZXing** | 3.5.3 | QR code image generation |
-| **Cloudinary SDK** | 1.39.0 | Menu item image upload & storage |
-| **Bucket4j** | 8.10.1 | In-memory rate limiting |
-| **SpringDoc OpenAPI** | 2.6.0 | Swagger UI at /swagger-ui.html |
-| **Lombok** | — | Boilerplate reduction |
-| **spring-dotenv** | 4.0.0 | Load .env file into Spring Boot |
-
-### Frontend
-| Technology | Version | Purpose |
-|---|---|---|
-| **React** | 18.3.1 | UI library |
-| **Vite** | 5.4.8 | Build tool & dev server |
-| **React Router DOM** | 6.26.2 | Client-side routing |
-| **Zustand** | 4.5.5 | Global state management |
-| **Axios** | 1.7.7 | HTTP client for API calls |
-| **@stomp/stompjs** | 7.0.0 | WebSocket client for real-time updates |
-| **SockJS** | 1.6.1 | WebSocket fallback transport |
-| **Recharts** | 2.12.7 | Analytics charts |
-| **TailwindCSS** | 3.4.13 | Utility-first CSS styling |
-| **Lucide React** | 0.441.0 | Icon library |
-| **React Hot Toast** | 2.4.1 | Toast notifications |
-| **date-fns** | 3.6.0 | Date formatting |
+| 🤖 **Interactive Bot** | Customer sends `Menu` to `+1 (555) 164-0709` → bot replies with dynamic restaurant menu |
+| 🔢 **Smart Input Parsing** | Accepts flexible formats like `1, 3x2, 2` (Item #1 x1, Item #3 x2, Item #2 x1) |
+| ✔️ **Confirmation & Receipt** | Bot generates itemized bill + total amount; customer replies `YES` to place or `NO` to cancel |
+| 📢 **Automated WhatsApp Status Updates** | Automatic WhatsApp messages on status changes: <br>• **CONFIRMED:** *"✅ Your order has been confirmed!"* <br>• **PREPARING:** *"🍳 Your order is being prepared!"* <br>• **READY:** *"🎉 Your order is ready for pickup!"* <br>• **SERVED:** *"🙏 Thank you for ordering from [Restaurant Name]! Hope you enjoyed your meal. Visit us again soon! ❤️"* <br>• **CANCELLED:** *"❌ Your order #4 has been cancelled. Reason: [Custom Reason]"* |
+| 🛡️ **Duplicate & Session Safety** | Ordered `List` queries prevent `NonUniqueResultException`; sessions auto-expire after inactivity |
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CUSTOMERS                                │
-│                                                                 │
-│  📱 Scan QR at table           💬 WhatsApp customer             │
-│       │                                  │                      │
-│       ▼                                  ▼                      │
-│  React Frontend               Meta WhatsApp Cloud API           │
-│  (localhost:5173)                         │                     │
-│       │                                  │ Webhook POST         │
-│       │ REST API                         ▼                      │
-│       ▼                    ┌─────────────────────────────────┐  │
-│  Spring Boot Backend ◄────►│  /api/webhook/whatsapp          │  │
-│  (localhost:8080)          └─────────────────────────────────┘  │
-│       │                                                         │
-│       ├── REST API (/api/*)                                     │
-│       ├── WebSocket (STOMP: /ws)                                │
-│       └── PostgreSQL (localhost:5432)                           │
-│                                                                 │
-│  🖥️ Owner Dashboard ◄── WebSocket ── Backend                   │
-│  (React, JWT protected)                                         │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                CUSTOMERS                                        │
+│                                                                                 │
+│  📱 Scan QR at table                     💬 WhatsApp Customer                   │
+│       │                                           │                             │
+│       ▼                                           ▼                             │
+│  Vercel React SPA                      Meta WhatsApp Cloud API                  │
+│  (whats-app-ordering-system-eta.vercel.app)       │                             │
+│       │                                           │ Webhook POST                │
+│       │ REST API                                  ▼                             │
+│       ▼                              ┌───────────────────────────────────────┐  │
+│  Render Spring Boot Backend ◄────────┤ /api/v1/webhook/whatsapp              │  │
+│  (whatsapporderingsystem.onrender.com) └───────────────────────────────────────┘  │
+│       │                                                                         │
+│       ├── REST API (/api/v1/*)                                                  │
+│       ├── STOMP WebSocket (/ws)                                                 │
+│       └── Supabase PostgreSQL Database (db.ohftwlkycqsaevznacii.supabase.co)     │
+│                                                                                 │
+│  🖥️ Restaurant Owner Dashboard ◄────── WebSocket ────── Backend                │
+│  (Real-time live queue + sound alert)                                           │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📦 Prerequisites
+## 🛠️ Tech Stack
 
-Make sure you have installed:
+### Backend
+- **Core:** Java 21, Spring Boot 4.1.0
+- **Security:** Spring Security 6.x, JWT (`jjwt` 0.12.6), BCrypt Password Hashing
+- **Database:** Supabase PostgreSQL 16, Spring Data JPA, Flyway Migrations
+- **Real-Time:** Spring WebSocket (STOMP + SockJS)
+- **Utilities:** ZXing 3.5.3 (QR Generation), Cloudinary SDK 1.39.0 (Image Upload), Spring Retry, Bucket4j 8.10.1 (Rate Limiting)
 
-| Tool | Version | Download |
-|---|---|---|
-| **Java JDK** | 21+ | https://adoptium.net/ |
-| **Node.js** | 18+ | https://nodejs.org/ |
-| **Docker Desktop** | Latest | https://www.docker.com/products/docker-desktop/ |
-| **Git** | Any | https://git-scm.com/ |
-
-> Maven is included as `mvnw` / `mvnw.cmd` wrapper — no separate install needed.
-> Docker is only required to run PostgreSQL as a container.
-
----
-
-## 🚀 Local Setup (Step-by-Step)
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/whatsappOrdering.git
-cd whatsappOrdering
-```
+### Frontend
+- **Framework:** React 18, Vite 5.4, React Router DOM 6
+- **State & HTTP:** Zustand 4.5, Axios 1.7
+- **Real-Time:** `@stomp/stompjs` 7.0
+- **Styling & UI:** Vanilla CSS + TailwindCSS 3.4, Lucide React Icons, React Hot Toast
 
 ---
 
-### 2. Setup PostgreSQL Database
-
-**Option A — Using Docker (Recommended)**
-
-```bash
-# Start PostgreSQL container
-docker-compose up -d
-
-# Verify it is running
-docker ps
-```
-
-Container details:
-- Host: localhost
-- Port: 5432
-- Database: whatsapp_ordering
-- User: postgres
-- Password: postgres
-
-**Option B — Local PostgreSQL**
-
-If you have PostgreSQL already installed:
-
-```sql
--- Run in psql or pgAdmin
-CREATE DATABASE whatsapp_ordering;
-```
-
-> Database tables are created automatically by Flyway migrations on first startup.
-
----
-
-### 3. Configure Environment Variables
-
-```bash
-# Windows
-copy .env.example .env
-
-# Linux / Mac
-cp .env.example .env
-```
-
-Edit `.env` with your values:
-
-```env
-# ── Database ─────────────────────────────────────────────────────
-DB_URL=jdbc:postgresql://localhost:5432/whatsapp_ordering
-DB_USER=postgres
-DB_PASSWORD=postgres
-
-# ── JWT ──────────────────────────────────────────────────────────
-# Any long random string (min 32 characters)
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-
-# ── WhatsApp Cloud API ───────────────────────────────────────────
-# From: https://developers.facebook.com/ → Your App → WhatsApp → API Setup
-WHATSAPP_TOKEN=your_permanent_system_user_token
-WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
-WHATSAPP_VERIFY_TOKEN=any_string_you_choose
-
-# ── Cloudinary ───────────────────────────────────────────────────
-# From: https://cloudinary.com → Dashboard → API Environment variable
-CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
-
-# ── CORS ─────────────────────────────────────────────────────────
-FRONTEND_ORIGIN=http://localhost:5173
-```
-
-> For a quick test without WhatsApp / Cloudinary: put any dummy string for those fields.
-> The app will still run; only those specific features will be non-functional.
-
----
-
-### 4. Run the Backend
-
-```bash
-# Windows (from project root)
-.\mvnw.cmd spring-boot:run
-
-# Linux / Mac
-./mvnw spring-boot:run
-```
-
-What happens on first run:
-1. Maven downloads all dependencies (~2-3 minutes)
-2. Flyway creates all database tables automatically
-3. Spring Boot starts on http://localhost:8080
-
-Verify it is working:
-- Health check:  http://localhost:8080/actuator/health
-- Swagger UI:    http://localhost:8080/swagger-ui.html
-
----
-
-### 5. Run the Frontend
-
-Open a NEW terminal window:
-
-```bash
-cd frontend
-
-# Install dependencies (first time only)
-npm install
-
-# Start dev server
-npm run dev
-```
-
-Frontend available at: http://localhost:5173
-
----
-
-### 6. Setup WhatsApp Webhook (ngrok)
-
-> Skip this step if you only want QR-based ordering. Required only for WhatsApp bot.
-
-The WhatsApp Cloud API needs a public HTTPS URL to send webhooks.
-ngrok is already included in the project root as `ngrok.exe`.
-
-```powershell
-# Windows (from project root)
-.\ngrok.exe http 8080
-```
-
-ngrok output example:
-```
-Forwarding   https://abc123.ngrok-free.app -> http://localhost:8080
-```
-
-Copy that https:// URL, then:
-
-1. Go to https://developers.facebook.com/
-2. Your App → WhatsApp → Configuration
-3. Webhook URL: https://abc123.ngrok-free.app/api/webhook/whatsapp
-4. Verify Token: same value you set as WHATSAPP_VERIFY_TOKEN in .env
-5. Subscribe to: messages
-
----
-
-## 🔧 External Services Setup
-
-### Meta WhatsApp Cloud API
-
-1. Go to https://developers.facebook.com/ and create a developer account
-2. Create a new App → Select Business type
-3. Add the WhatsApp product
-4. Go to WhatsApp → API Setup
-5. Note down:
-   - Phone Number ID → WHATSAPP_PHONE_NUMBER_ID
-   - Create a Permanent System User Token → WHATSAPP_TOKEN
-6. Add your phone number as a test recipient (free tier limitation)
-
-### Cloudinary (Menu Image Storage)
-
-1. Sign up at https://cloudinary.com (free tier is sufficient)
-2. Go to Dashboard
-3. Copy the API Environment variable (format: cloudinary://key:secret@cloudname)
-4. Paste it as CLOUDINARY_URL in .env
-
----
-
-## 📁 Project Structure
+## 💬 WhatsApp Bot Flow
 
 ```
-whatsappOrdering/
-│
-├── src/main/java/com/example/whatsappOrdering/
-│   ├── config/               # App properties, CORS, Security, WebSocket config
-│   ├── controller/
-│   │   ├── AuthController.java            # /api/auth/** — login, signup
-│   │   ├── MenuController.java            # /api/menu/** — menu CRUD
-│   │   ├── TableController.java           # /api/tables/** — table & QR management
-│   │   ├── OrderController.java           # /api/orders/** — order lifecycle
-│   │   ├── AnalyticsController.java       # /api/analytics/** — chart data
-│   │   ├── RestaurantController.java      # /api/restaurant/** — settings
-│   │   ├── PublicMenuController.java      # /api/public/** — customer menu (no auth)
-│   │   └── WhatsappWebhookController.java # /api/webhook/whatsapp — Meta webhook
-│   ├── service/
-│   │   └── WhatsappService.java           # Conversational state machine
-│   ├── entity/               # JPA database entities
-│   │   ├── Restaurant.java, User.java
-│   │   ├── MenuItem.java, Category.java
-│   │   ├── RestaurantTable.java
-│   │   ├── Order.java, OrderItem.java
-│   │   └── WhatsappSession.java, WhatsappMessage.java
-│   ├── repository/           # Spring Data JPA repositories
-│   ├── security/             # JWT filter & token utility
-│   ├── websocket/            # STOMP WebSocket publisher
-│   ├── dto/                  # Request / response data classes
-│   └── exception/            # Global exception handler
-│
-├── src/main/resources/
-│   ├── application.properties            # Spring config (reads .env values)
-│   └── db/migration/                     # Flyway SQL migration scripts
-│
-├── frontend/
-│   └── src/
-│       ├── pages/
-│       │   ├── auth/         # Login.jsx, Signup.jsx
-│       │   ├── dashboard/    # Dashboard, MenuManagement, TableManagement,
-│       │   │                 # Analytics, Settings
-│       │   └── customer/     # CustomerMenu.jsx, OrderStatus.jsx
-│       ├── components/       # Reusable UI components, DashboardLayout
-│       ├── store/            # Zustand global state (authStore, etc.)
-│       ├── api/              # Axios API client configuration
-│       └── hooks/            # Custom React hooks
-│
-├── docker-compose.yml        # PostgreSQL container definition
-├── .env.example              # Template for environment variables
-├── .env                      # Your local secrets (DO NOT commit to git)
-├── pom.xml                   # Maven build & dependency config
-└── ngrok.exe                 # Tunnel for WhatsApp webhook (Windows)
-```
-
----
-
-## 📡 API Reference
-
-All APIs are interactive at http://localhost:8080/swagger-ui.html
-
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| POST | /api/auth/signup | No | Register restaurant owner |
-| POST | /api/auth/login | No | Login, receive JWT token |
-| GET | /api/menu | Yes | Get all menu items |
-| POST | /api/menu | Yes | Add menu item (with image) |
-| PUT | /api/menu/{id} | Yes | Update menu item |
-| DELETE | /api/menu/{id} | Yes | Delete menu item |
-| GET | /api/tables | Yes | List all tables |
-| POST | /api/tables | Yes | Create new table |
-| GET | /api/tables/{id}/qr | Yes | Download table QR code |
-| GET | /api/orders | Yes | Get orders (filterable) |
-| PATCH | /api/orders/{id}/status | Yes | Update order status |
-| GET | /api/analytics/summary | Yes | Revenue & analytics data |
-| GET | /api/public/menu/{qrSecret} | No | Customer menu via QR |
-| POST | /api/public/orders | No | Place a QR-based order |
-| GET | /api/webhook/whatsapp | No | Meta webhook verification |
-| POST | /api/webhook/whatsapp | No | Receive WhatsApp messages |
-| GET | /actuator/health | No | Backend health check |
-
-> Auth: Add header `Authorization: Bearer <your_jwt_token>`
-
----
-
-## 🔄 WhatsApp Bot — How It Works
-
-The bot uses a 3-state conversational state machine:
-
-```
-Customer sends any message
+Customer messages "Menu"
          │
          ▼
    [AWAITING_ITEMS] ──► Bot sends numbered menu list
          │
-         │  Customer replies: "1, 3x2, 2"
+         │ Customer replies: "1, 3x2, 2"
          ▼
-    [CONFIRMING] ──► Bot shows order summary + total
+    [CONFIRMING] ──► Bot shows order summary & total
                      "Reply YES to confirm or NO to cancel"
          │
     ┌────┴────┐
    YES       NO
     │         │
     ▼         ▼
-  [DONE]  [AWAITING_ITEMS] (restart)
+  [DONE]  [AWAITING_ITEMS] (reset)
     │
     ▼
-  Order created in database
-  Real-time WebSocket push → Owner Dashboard notification
-  Confirmation SMS sent to customer
+  1. Order saved in Database
+  2. Live STOMP WebSocket push → Sound alert 🔔 on Owner Dashboard
+  3. Automated WhatsApp status updates sent as order progresses (CONFIRMED → PREPARING → READY → SERVED / CANCELLED)
 ```
 
-Order format: "1, 3x2, 2"
-  - 1     → Item #1, quantity 1
-  - 3x2   → Item #3, quantity 2
-  - 2     → Item #2, quantity 1
+---
 
-Sessions auto-expire after a configurable timeout (set in Settings).
-Stale sessions are cleaned up automatically every 15 minutes.
+## 📡 API Reference
+
+Interactive OpenAPI / Swagger documentation is available at `/swagger-ui.html`.
+
+### Key Endpoints:
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| **POST** | `/api/v1/auth/signup` | No | Register new restaurant owner |
+| **POST** | `/api/v1/auth/login` | No | Login and receive Bearer JWT token |
+| **GET** | `/api/v1/restaurants/me/categories` | Yes | List all menu categories |
+| **POST** | `/api/v1/restaurants/me/categories` | Yes | Create menu category |
+| **PUT** | `/api/v1/categories/{id}` | Yes | Edit category name |
+| **DELETE** | `/api/v1/categories/{id}` | Yes | Delete category (items unlinked safely) |
+| **GET** | `/api/v1/restaurants/me/menu-items` | Yes | List menu items |
+| **POST** | `/api/v1/restaurants/me/menu-items` | Yes | Create menu item |
+| **PUT** | `/api/v1/menu-items/{id}` | Yes | Edit menu item |
+| **DELETE** | `/api/v1/menu-items/{id}` | Yes | Delete menu item (FK safety unlinking) |
+| **PATCH** | `/api/v1/menu-items/{id}/availability` | Yes | Toggle item availability (Out of Stock) |
+| **GET** | `/api/v1/restaurants/me/tables` | Yes | List all tables |
+| **POST** | `/api/v1/restaurants/me/tables` | Yes | Create table |
+| **PUT** | `/api/v1/tables/{id}` | Yes | Edit table number |
+| **DELETE** | `/api/v1/tables/{id}` | Yes | Delete table |
+| **GET** | `/api/v1/tables/{id}/qr` | Yes | Download table QR code PNG |
+| **GET** | `/api/v1/restaurants/me/orders` | Yes | Fetch live orders (filterable) |
+| **PATCH** | `/api/v1/orders/{id}/status` | Yes | Advance status or Cancel with custom `reason` |
+| **GET** | `/api/v1/public/menu/{qrSecret}` | No | Customer menu via QR scan |
+| **POST** | `/api/v1/public/orders` | No | Customer places Dine-In QR order |
+| **POST** | `/api/v1/webhook/whatsapp` | No | Meta WhatsApp Webhook endpoint |
 
 ---
 
-## 🔑 First Time Login
+## 🔐 Security Architecture
 
-There are no pre-seeded users. Steps:
-1. Open http://localhost:5173/signup
-2. Create your restaurant owner account
-3. Login at http://localhost:5173/login
-4. Go to Settings and set your restaurant WhatsApp number
-
----
-
-## 🐛 Troubleshooting
-
-### Backend won't start
-
-| Problem | Solution |
-|---|---|
-| Cannot connect to PostgreSQL | Run: docker-compose up -d and wait 10 seconds |
-| Port 8080 already in use | Kill the process or change port in application.properties |
-| Flyway migration failed | Drop and recreate the DB, then restart backend |
-| .env values not loading | Ensure .env file is in the project root (same folder as pom.xml) |
-
-### Frontend issues
-
-| Problem | Solution |
-|---|---|
-| npm not found | Install Node.js from https://nodejs.org/ |
-| CORS error in browser | Ensure FRONTEND_ORIGIN=http://localhost:5173 in .env; restart backend |
-| Blank page after login | Open browser DevTools (F12) → Console for errors |
-| Cannot connect to backend | Verify backend is running on port 8080 |
-
-### WhatsApp bot issues
-
-| Problem | Solution |
-|---|---|
-| Webhook not verified | WHATSAPP_VERIFY_TOKEN in .env must exactly match Meta Console value |
-| ngrok tunnel expired | Restart ngrok and update webhook URL in Meta Developer Console |
-| Messages not received | Add your phone as a test recipient in Meta Developer Console |
-| Restaurant not found in logs | In Dashboard Settings, set WhatsApp number (digits only, no + or spaces) |
+1. **JWT Authentication:** Private endpoints require header `Authorization: Bearer <token>`. Unauthorized calls return HTTP 401.
+2. **BCrypt Password Hashing:** Owner passwords hashed with strength 12.
+3. **Stateless Session Management:** No server-side HTTP session vulnerability.
+4. **Parameterized SQL Queries:** Spring Data JPA prevents SQL injection.
+5. **Foreign Key Integrity:** Cascaded unlinking before item/category deletion prevents database constraint violations.
 
 ---
 
-## 🔒 Security Notes
+## 🚀 Local Setup & Deployment
 
-- NEVER commit .env to git — it is already in .gitignore
-- Use a strong random string (32+ characters) for JWT_SECRET
-- In production, use your hosting platform's environment variable system instead of .env
-- WHATSAPP_VERIFY_TOKEN can be any string; just keep it consistent between .env and Meta Console
+### 1. Environment Configuration (`.env`)
+Create a `.env` file in the root directory:
+
+```env
+DB_URL=jdbc:postgresql://localhost:5432/whatsapp_ordering
+DB_USER=postgres
+DB_PASSWORD=postgres
+JWT_SECRET=your_super_secret_jwt_key_min_32_characters
+WHATSAPP_TOKEN=your_meta_permanent_access_token
+WHATSAPP_PHONE_NUMBER_ID=1302776732910505
+WHATSAPP_VERIFY_TOKEN=your_verify_token
+CLOUDINARY_URL=cloudinary://key:secret@cloudname
+FRONTEND_ORIGIN=http://localhost:5173
+```
+
+### 2. Run Backend (Spring Boot)
+```bash
+mvn clean package -DskipTests
+mvn spring-boot:run
+```
+
+### 3. Run Frontend (React + Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
 ## 📄 License
+This project is for educational and commercial demonstration purposes.
 
-This project is for educational and demonstration purposes.
-
----
-
-*Built with Spring Boot 4.1 + React 18 + PostgreSQL 16*
+*Built with Spring Boot 4.1 + React 18 + Supabase PostgreSQL 16 + Meta WhatsApp Cloud API*
