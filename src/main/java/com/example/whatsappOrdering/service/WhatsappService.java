@@ -54,8 +54,8 @@ public class WhatsappService {
         String normalizedCustomer = customerPhone.replaceAll("[^\\d]", "");
 
         List<Restaurant> matches = restaurantRepository.findByWhatsappNumber(normalizedDisplay);
-        Restaurant restaurant = !matches.isEmpty() ? matches.get(0)
-                : restaurantRepository.findAll().stream().findFirst().orElse(null);
+        Restaurant restaurant = !matches.isEmpty() ? matches.get(matches.size() - 1)
+                : restaurantRepository.findAll().stream().reduce((first, second) -> second).orElse(null);
         if (restaurant == null) {
             log.warn("No restaurant available in database");
             return;
