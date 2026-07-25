@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
     List<MenuItem> findByRestaurantIdOrderByCategoryIdAscNameAsc(Long restaurantId);
     List<MenuItem> findByRestaurantIdAndAvailableTrueOrderByCategoryIdAscNameAsc(Long restaurantId);
+    List<MenuItem> findByCategoryId(Long categoryId);
     Optional<MenuItem> findByIdAndRestaurantId(Long id, Long restaurantId);
     void deleteByIdAndRestaurantId(Long id, Long restaurantId);
 }

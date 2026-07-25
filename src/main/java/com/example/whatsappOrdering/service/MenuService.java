@@ -43,20 +43,23 @@ public class MenuService {
 
     @Transactional
     public CategoryResponse updateCategory(Long ownerId, Long categoryId, CategoryRequest request) {
-        Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        Category cat = categoryRepository.findByIdAndRestaurantId(categoryId, restaurant.getId())
+        Category cat = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
         cat.setName(request.name());
-        cat.setDisplayOrder(request.displayOrder() != null ? request.displayOrder() : cat.getDisplayOrder());
+        if (request.displayOrder() != null) cat.setDisplayOrder(request.displayOrder());
         return toCategoryResponse(categoryRepository.save(cat));
     }
 
     @Transactional
     public void deleteCategory(Long ownerId, Long categoryId) {
-        Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        categoryRepository.findByIdAndRestaurantId(categoryId, restaurant.getId())
+        Category cat = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
-        categoryRepository.deleteByIdAndRestaurantId(categoryId, restaurant.getId());
+        List<MenuItem> itemsInCategory = menuItemRepository.findByCategoryId(categoryId);
+        for (MenuItem item : itemsInCategory) {
+            item.setCategory(null);
+            menuItemRepository.save(item);
+        }
+        categoryRepository.delete(cat);
     }
 
     // ─── Menu Items ───────────────────────────────────────────────────
@@ -66,8 +69,7 @@ public class MenuService {
         Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
         Category category = null;
         if (request.categoryId() != null) {
-            category = categoryRepository.findByIdAndRestaurantId(request.categoryId(), restaurant.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category", request.categoryId()));
+            category = categoryRepository.findById(request.categoryId()).orElse(null);
         }
         MenuItem item = MenuItem.builder()
                 .restaurant(restaurant)
@@ -84,19 +86,17 @@ public class MenuService {
     @Transactional(readOnly = true)
     public List<MenuItemResponse> listMenuItems(Long ownerId) {
         Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        return menuItemRepository.findByRestaurantIdOrderByCategoryIdAscNameAsc(restaurant.getId())
+        return menuItemRepository.findAll()
                 .stream().map(this::toMenuItemResponse).toList();
     }
 
     @Transactional
     public MenuItemResponse updateMenuItem(Long ownerId, Long itemId, MenuItemRequest request) {
-        Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        MenuItem item = menuItemRepository.findByIdAndRestaurantId(itemId, restaurant.getId())
+        MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", itemId));
         Category category = null;
         if (request.categoryId() != null) {
-            category = categoryRepository.findByIdAndRestaurantId(request.categoryId(), restaurant.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category", request.categoryId()));
+            category = categoryRepository.findById(request.categoryId()).orElse(null);
         }
         item.setName(request.name());
         item.setDescription(request.description());
@@ -109,8 +109,7 @@ public class MenuService {
 
     @Transactional
     public MenuItemResponse toggleAvailability(Long ownerId, Long itemId, boolean available) {
-        Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        MenuItem item = menuItemRepository.findByIdAndRestaurantId(itemId, restaurant.getId())
+        MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", itemId));
         item.setAvailable(available);
         return toMenuItemResponse(menuItemRepository.save(item));
@@ -118,10 +117,9 @@ public class MenuService {
 
     @Transactional
     public void deleteMenuItem(Long ownerId, Long itemId) {
-        Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        menuItemRepository.findByIdAndRestaurantId(itemId, restaurant.getId())
+        MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", itemId));
-        menuItemRepository.deleteByIdAndRestaurantId(itemId, restaurant.getId());
+        menuItemRepository.delete(item);
     }
 
     // ─── Mappers ─────────────────────────────────────────────────────
