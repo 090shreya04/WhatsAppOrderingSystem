@@ -88,6 +88,14 @@ public class WhatsappOrderingApplication {
                         .build());
 
                 System.out.println("✅ Database Seeder: Successfully seeded Tasty Restaurant & Menu Items!");
+            } else {
+                // Ensure all existing restaurants have whatsappNumber = 15551640709 so WhatsApp bot maps correctly
+                restaurantRepository.findAll().forEach(r -> {
+                    if (r.getWhatsappNumber() == null || r.getWhatsappNumber().isBlank() || !r.getWhatsappNumber().equals("15551640709")) {
+                        r.setWhatsappNumber("15551640709");
+                        restaurantRepository.save(r);
+                    }
+                });
             }
         };
     }
