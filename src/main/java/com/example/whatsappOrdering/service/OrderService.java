@@ -159,6 +159,7 @@ public class OrderService {
                 case CONFIRMED -> "✅ Your order has been confirmed! We're getting started on it.";
                 case PREPARING -> "🍳 Your order is being prepared!";
                 case READY -> "🎉 Your order is ready for pickup!";
+                case SERVED -> "🙏 Thank you for ordering from " + (order.getRestaurant() != null ? order.getRestaurant().getName() : "us") + "! Hope you enjoyed your meal. Visit us again soon! ❤️";
                 case CANCELLED -> "❌ Sorry, your order has been cancelled. Please contact us for help.";
                 default -> null;
             };
