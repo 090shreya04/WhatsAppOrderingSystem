@@ -120,11 +120,7 @@ public class MenuService {
     public void deleteMenuItem(Long ownerId, Long itemId) {
         MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", itemId));
-        List<com.example.whatsappOrdering.entity.OrderItem> orderItems = orderItemRepository.findByMenuItemId(itemId);
-        for (com.example.whatsappOrdering.entity.OrderItem oi : orderItems) {
-            oi.setMenuItem(null);
-            orderItemRepository.save(oi);
-        }
+        orderItemRepository.deleteByMenuItemId(itemId);
         menuItemRepository.delete(item);
     }
 

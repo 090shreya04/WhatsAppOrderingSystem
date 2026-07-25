@@ -14,6 +14,11 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     List<OrderItem> findByMenuItemId(Long menuItemId);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("DELETE FROM OrderItem oi WHERE oi.menuItem.id = :menuItemId")
+    void deleteByMenuItemId(@Param("menuItemId") Long menuItemId);
+
     /** Top-selling items by quantity in a date range (analytics) */
     @Query("SELECT oi.menuItem.name, SUM(oi.quantity) AS total FROM OrderItem oi " +
            "WHERE oi.order.restaurant.id = :restaurantId " +
