@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface WhatsappSessionRepository extends JpaRepository<WhatsappSession, Long> {
 
     /** Called on every inbound webhook message to find or create a session */
-    Optional<WhatsappSession> findByRestaurantIdAndCustomerPhone(Long restaurantId, String customerPhone);
+    List<WhatsappSession> findByRestaurantIdAndCustomerPhoneOrderByLastMessageAtDesc(Long restaurantId, String customerPhone);
 
     /** Cleanup: find stale sessions for scheduled expiry */
     @Query("SELECT s FROM WhatsappSession s WHERE s.lastMessageAt < :cutoff")

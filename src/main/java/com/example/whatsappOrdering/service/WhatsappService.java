@@ -53,11 +53,9 @@ public class WhatsappService {
         String normalizedDisplay = displayPhoneNumber.replaceAll("[^\\d]", "");
         String normalizedCustomer = customerPhone.replaceAll("[^\\d]", "");
 
-        Restaurant restaurant = restaurantRepository.findByWhatsappNumber(normalizedDisplay)
-                .orElseGet(() -> {
-                    log.info("No exact match for {}, falling back to default restaurant", normalizedDisplay);
-                    return restaurantRepository.findAll().stream().findFirst().orElse(null);
-                });
+        List<Restaurant> matches = restaurantRepository.findByWhatsappNumber(normalizedDisplay);
+        Restaurant restaurant = !matches.isEmpty() ? matches.get(0)
+                : restaurantRepository.findAll().stream().findFirst().orElse(null);
         if (restaurant == null) {
             log.warn("No restaurant available in database");
             return;
@@ -67,10 +65,10 @@ public class WhatsappService {
         logMessage(restaurant, normalizedCustomer, MessageDirection.IN, messageBody,
                 whatsappMessageId, null);
 
-        // Get or create session
-        WhatsappSession session = sessionRepository
-                .findByRestaurantIdAndCustomerPhone(restaurant.getId(), normalizedCustomer)
-                .orElse(null);
+        // Get or create session safely
+        List<WhatsappSession> sessions = sessionRepository
+                .findByRestaurantIdAndCustomerPhoneOrderByLastMessageAtDesc(restaurant.getId(), normalizedCustomer);
+        WhatsappSession session = sessions.isEmpty() ? null : sessions.get(0);
 
         // Session expiry check
         if (session != null && isExpired(session)) {

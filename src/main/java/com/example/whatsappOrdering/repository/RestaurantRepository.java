@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     Optional<Restaurant> findByOwnerId(Long ownerId);
     Optional<Restaurant> findByQrSecret(String qrSecret);
-    Optional<Restaurant> findByWhatsappNumber(String whatsappNumber);
+    java.util.List<Restaurant> findByWhatsappNumber(String whatsappNumber);
     boolean existsByOwnerId(Long ownerId);
 }
