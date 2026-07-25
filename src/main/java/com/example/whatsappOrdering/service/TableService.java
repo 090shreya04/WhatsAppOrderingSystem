@@ -33,12 +33,13 @@ public class TableService {
     @Transactional
     public TableResponse createTable(Long ownerId, CreateTableRequest request) {
         Restaurant restaurant = restaurantService.getRestaurantByOwnerIdOrThrow(ownerId);
-        if (tableRepository.existsByRestaurantIdAndTableNumber(restaurant.getId(), request.tableNumber())) {
-            throw new BusinessException("Table number already exists: " + request.tableNumber());
+        String num = request.tableNumber() != null ? request.tableNumber().trim() : "";
+        if (tableRepository.existsByRestaurantIdAndTableNumber(restaurant.getId(), num)) {
+            throw new BusinessException("Table number already exists: " + num);
         }
         RestaurantTable table = RestaurantTable.builder()
                 .restaurant(restaurant)
-                .tableNumber(request.tableNumber())
+                .tableNumber(num)
                 .status(TableStatus.FREE)
                 .build();
         table = tableRepository.save(table);

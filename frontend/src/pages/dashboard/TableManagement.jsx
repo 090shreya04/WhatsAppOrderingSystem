@@ -13,13 +13,17 @@ function TableCard({ table, onStatusToggle }) {
     link.href = urlWithParam
     // Attach auth header via fetch
     fetch(urlWithParam, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.blob())
+      .then(r => {
+        if (!r.ok) throw new Error('QR download failed')
+        return r.blob()
+      })
       .then(blob => {
         const url = URL.createObjectURL(blob)
         link.href = url
         link.download = `table-${table.tableNumber}-qr.png`
         link.click()
         URL.revokeObjectURL(url)
+        toast.success(`QR for Table ${table.tableNumber} downloaded!`)
       })
       .catch(() => toast.error('QR download failed'))
   }

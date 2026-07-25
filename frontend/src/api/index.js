@@ -36,11 +36,16 @@ export const menuApi = {
   },
 }
 
+const getBackendBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL
+  return envUrl ? `${envUrl}/api/v1` : '/api/v1'
+}
+
 export const tableApi = {
   getTables:    ()         => api.get('/restaurants/me/tables'),
   createTable:  (data)     => api.post('/restaurants/me/tables', data),
   updateStatus: (id, status) => api.patch(`/tables/${id}/status`, { status }),
-  getQrUrl:     (id)       => `/api/v1/tables/${id}/qr`,
+  getQrUrl:     (id)       => `${getBackendBaseUrl()}/tables/${id}/qr`,
 }
 
 export const orderApi = {
